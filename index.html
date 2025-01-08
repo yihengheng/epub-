@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EPUB 在线阅读器</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <script src="jszip.min.js"></script>
+  <script src="epub.min.js"></script>
+  <style>
+    /* 页面样式 */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      color: #007bff;
+      margin-top: 20px;
+    }
+
+    #file-input {
+      display: block;
+      margin: 20px auto;
+      padding: 10px;
+      border: 2px dashed #007bff;
+      border-radius: 5px;
+      text-align: center;
+      cursor: pointer;
+      color: #007bff;
+      background-color: #f8f9fa;
+    }
+
+    #file-input:hover {
+      background-color: #e9ecef;
+    }
+
+    #controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px;
+      padding: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #fff;
+      background-color: #007bff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #brightness {
+      width: 150px;
+    }
+
+    #viewer {
+      width: 90%;
+      height: 70vh;
+      margin: 20px auto;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      background-color: #fff;
+    }
+
+    #viewer iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    #error-log {
+      display: none;
+      color: #dc3545;
+      text-align: center;
+      margin: 10px auto;
+      padding: 10px;
+      border: 1px solid #dc3545;
+      background-color: #f8d7da;
+      width: 90%;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>EPUB 在线阅读器</h1>
+  <input type="file" id="file-input" accept=".epub" />
+  <div id="controls">
+    <button id="prev">上一页</button>
+    <button id="next">下一页</button>
+    <button id="zoom-in">放大字体</button>
+    <button id="zoom-out">缩小字体</button>
+    <label for="brightness">亮度：</label>
+    <input type="range" id="brightness" min="0" max="100" value="50">
+  </div>
+  <div id="viewer"></div>
+  <div id="error-log"></div>
+  <script>
+    // 注册 Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then((registration) => {
+          console.log('Service Worker 注册成功:', registration);
+        })
+        .catch((error) => {
+          console.log('Service Worker 注册失败:', error);
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const viewer = document.getElementById("viewer");
+      const fileInput = document.getElementById("file-input");
+      const prevBtn = document.getElementById("prev");
+      const nextBtn = document.getElementById("next");
+      const zoomInBtn = document.getElementById("zoom-in");
+      const zoomOutBtn = document.getElementById("zoom-out");
+      const brightnessSlider = document.getElementById("brightness");
+      const errorLog = document.getElementById("error-log");
+
+      let book, rendition;
+      let currentFontSize = 100; // 字体大小百分比
+      let currentBookId = null; // 当前书籍的唯一标识
+
+      // 显示错误信息
+      function logError(message) {
+        errorLog.style.display = "block";
+        errorLog.innerHTML += `<p>${new Date().toLocaleTimeString()}: ${message}</p>`;
+        console.error(message);
+      }
+
+      // 保存阅读进度
+      function saveProgress() {
+        if (book && rendition) {
+          const currentLocation = rendition.currentLocation();
+          if (currentLocation && currentBookId) {
+            const progress = {
+              bookId: currentBookId,
+              location: currentLocation.start.cfi,
+            };
+            localStorage.setItem(currentBookId, JSON.stringify(progress));
+          }
+        }
+      }
+
+      // 加载阅读进度
+      function loadProgress(bookId) {
+        const progress = JSON.parse(localStorage.getItem(bookId));
+        if (progress && rendition) {
+          rendition.display(progress.location);
+        }
+      }
+
+      // 加载 EPUB 文件
+      fileInput.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const arrayBuffer = e.target.result;
+            try {
+              currentBookId = `${file.name}-${file.size}`;
+              book = ePub(arrayBuffer);
+              rendition = book.renderTo(viewer, {
+                width: "100%",
+                height: "100%",
+              });
+
+              // 应用默认字体大小
+              rendition.themes.fontSize(`${currentFontSize}%`);
+              loadProgress(currentBookId);
+              rendition.display();
+            } catch (error) {
+              logError(`加载 EPUB 文件时出错：${error.message}`);
+            }
+          };
+          reader.onerror = (e) => {
+            logError(`文件加载失败：${e.target.error.message}`);
+          };
+          reader.readAsArrayBuffer(file);
+        } else {
+          logError("未选择文件");
+        }
+      });
+
+      prevBtn.addEventListener("click", () => {
+        if (rendition) {
+          rendition.prev().then(saveProgress);
+        }
+      });
+
+      nextBtn.addEventListener("click", () => {
+        if (rendition) {
+          rendition.next().then(saveProgress);
+        }
+      });
+
+      zoomInBtn.addEventListener("click", () => {
+        if (rendition) {
+          currentFontSize += 10;
+          rendition.themes.fontSize(`${currentFontSize}%`);
+        }
+      });
+
+      zoomOutBtn.addEventListener("click", () => {
+        if (rendition) {
+          currentFontSize = Math.max(50, currentFontSize - 10); // 最小字体大小 50%
+          rendition.themes.fontSize(`${currentFontSize}%`);
+        }
+      });
+
+      brightnessSlider.addEventListener("input", (event) => {
+        const brightness = event.target.value;
+        viewer.style.filter = `brightness(${brightness}%)`;
+      });
+    });
+  </script>
+</body>
+</html>
