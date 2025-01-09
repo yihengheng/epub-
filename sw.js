@@ -5,8 +5,9 @@ const ASSETS_TO_CACHE = [
   '/styles.css',
   '/jszip.min.js',
   '/epub.min.js',
-  '/icon-192x192.png',
-  '/icon-512x512.png'
+  '/192x192.png',
+  '/512x512.png',
+  '/manifest.json'
 ];
 
 // 安装 Service Worker
@@ -14,6 +15,21 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
+    })
+  );
+});
+
+// 激活 Service Worker
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
     })
   );
 });
