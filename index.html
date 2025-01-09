@@ -3,9 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#007bff"> <!-- PWA的主题颜色 -->
+  <meta name="apple-mobile-web-app-capable" content="yes"> <!-- 支持全屏 -->
+  <meta name="apple-mobile-web-app-title" content="Hi阅读器"> <!-- iOS主屏幕名称 -->
+
+  <!-- iOS Safari图标 -->
+  <link rel="apple-touch-icon" href="192x192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <link rel="manifest" href="manifest.json"> <!-- PWA的manifest文件 -->
   <title>EPUB 在线阅读器</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="manifest" href="manifest.json">
   <script src="jszip.min.js"></script>
   <script src="epub.min.js"></script>
   <style>
