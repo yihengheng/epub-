@@ -3,17 +3,17 @@
   "name": "Hi阅读器",
   "icons": [
     {
-      "src": "192x192.png",
+      "src": "./192x192.png", // 确保路径正确
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "512x512.png",
+      "src": "./512x512.png", // 确保路径正确
       "type": "image/png",
       "sizes": "512x512"
     }
   ],
-  "start_url": "/",
+  "start_url": "./index.html", // 确保路径正确
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#007bff"
