@@ -3,47 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#007bff"> <!-- PWA的主题颜色 -->
-  <meta name="apple-mobile-web-app-capable" content="yes"> <!-- 支持全屏 -->
-  <meta name="apple-mobile-web-app-title" content="Hi阅读器"> <!-- iOS主屏幕名称 -->
-
-  <!-- iOS Safari图标 -->
-  <link rel="apple-touch-icon" href="192x192.png">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-
-  <link rel="manifest" href="manifest.json"> <!-- PWA的manifest文件 -->
+  <meta name="theme-color" content="#007bff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Hi阅读器">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="./192x192.png">
+  <link rel="icon" type="image/x-icon" href="./favicon.ico">
+  <link rel="manifest" href="./manifest.json">
   <title>EPUB 在线阅读器</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="jszip.min.js"></script>
-  <script src="epub.min.js"></script>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./jszip.min.js"></script>
+  <script src="./epub.min.js"></script>
   <style>
     /* 页面样式 */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+      background: linear-gradient(to bottom, rgba(248, 249, 250, 0.4), rgba(233, 236, 239, 0.4)), url('./512x512.png');
+      background-size: cover;
+      background-position: center;
       color: #333;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
     }
 
     h1 {
       text-align: center;
       color: #007bff;
-      margin-top: 20px;
+      margin: 5px 0;
+      font-size: 1.2rem;
     }
 
     #file-input {
       display: block;
-      margin: 20px auto;
-      padding: 10px;
+      margin: 5px auto;
+      padding: 8px;
       border: 2px dashed #007bff;
       border-radius: 5px;
       text-align: center;
       cursor: pointer;
       color: #007bff;
       background-color: #f8f9fa;
+      font-size: 0.9rem;
     }
 
     #file-input:hover {
@@ -53,14 +56,14 @@
     #controls {
       display: flex;
       justify-content: center;
-      gap: 10px;
-      margin: 20px;
-      padding: 10px;
+      gap: 8px;
+      margin: 5px;
+      padding: 8px;
     }
 
     button {
-      padding: 10px 20px;
-      font-size: 16px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
       color: #fff;
       background-color: #007bff;
       border: none;
@@ -74,13 +77,13 @@
     }
 
     #brightness {
-      width: 150px;
+      width: 120px;
     }
 
     #viewer {
-      width: 90%;
-      height: 70vh;
-      margin: 20px auto;
+      width: 95%;
+      flex-grow: 1;
+      margin: 5px auto;
       border: 2px solid #ddd;
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -97,12 +100,13 @@
       display: none;
       color: #dc3545;
       text-align: center;
-      margin: 10px auto;
-      padding: 10px;
+      margin: 5px auto;
+      padding: 8px;
       border: 1px solid #dc3545;
       background-color: #f8d7da;
       width: 90%;
       border-radius: 5px;
+      font-size: 0.9rem;
     }
   </style>
 </head>
@@ -122,7 +126,7 @@
   <script>
     // 注册 Service Worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
+      navigator.serviceWorker.register('./sw.js') // 确保路径正确
         .then((registration) => {
           console.log('Service Worker 注册成功:', registration);
         })
@@ -142,17 +146,15 @@
       const errorLog = document.getElementById("error-log");
 
       let book, rendition;
-      let currentFontSize = 100; // 字体大小百分比
-      let currentBookId = null; // 当前书籍的唯一标识
+      let currentFontSize = 100;
+      let currentBookId = null;
 
-      // 显示错误信息
       function logError(message) {
         errorLog.style.display = "block";
         errorLog.innerHTML += `<p>${new Date().toLocaleTimeString()}: ${message}</p>`;
         console.error(message);
       }
 
-      // 保存阅读进度
       function saveProgress() {
         if (book && rendition) {
           const currentLocation = rendition.currentLocation();
@@ -166,7 +168,6 @@
         }
       }
 
-      // 加载阅读进度
       function loadProgress(bookId) {
         const progress = JSON.parse(localStorage.getItem(bookId));
         if (progress && rendition) {
@@ -174,7 +175,6 @@
         }
       }
 
-      // 加载 EPUB 文件
       fileInput.addEventListener("change", (event) => {
         const file = event.target.files[0];
         if (file) {
@@ -188,8 +188,6 @@
                 width: "100%",
                 height: "100%",
               });
-
-              // 应用默认字体大小
               rendition.themes.fontSize(`${currentFontSize}%`);
               loadProgress(currentBookId);
               rendition.display();
@@ -227,7 +225,7 @@
 
       zoomOutBtn.addEventListener("click", () => {
         if (rendition) {
-          currentFontSize = Math.max(50, currentFontSize - 10); // 最小字体大小 50%
+          currentFontSize = Math.max(50, currentFontSize - 10);
           rendition.themes.fontSize(`${currentFontSize}%`);
         }
       });
@@ -235,6 +233,22 @@
       brightnessSlider.addEventListener("input", (event) => {
         const brightness = event.target.value;
         viewer.style.filter = `brightness(${brightness}%)`;
+      });
+
+      // 添加键盘事件监听器
+      document.addEventListener("keydown", (event) => {
+        if (rendition) {
+          switch (event.key) {
+            case "ArrowLeft":
+            case "ArrowUp":
+              rendition.prev().then(saveProgress);
+              break;
+            case "ArrowRight":
+            case "ArrowDown":
+              rendition.next().then(saveProgress);
+              break;
+          }
+        }
       });
     });
   </script>
