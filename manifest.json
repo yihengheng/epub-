@@ -1,6 +1,6 @@
 {
-  "short_name": "Hi阅读器",
-  "name": "Hi阅读器",
+  "short_name": "逸恒专属阅读器",
+  "name": "逸恒专属阅读器",
   "icons": [
     {
       "src": "./192x192.png", // 确保路径正确
